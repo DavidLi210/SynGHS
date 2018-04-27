@@ -33,7 +33,7 @@ public class Node {
 	private Map<Integer, Integer> tree_edges;
 	// other edges == edges pointing to nodes in same component while not in tree
 	private Map<Integer, Integer> other_edges;
-	private static final String configAddr = "config2.txt";
+	private static final String configAddr = "config.txt";
 	private int root;
 	private int round;
 	private Integer parent;
@@ -264,15 +264,22 @@ public class Node {
 				if (root == id) {
 					// System.out.println("Tree Structure : " + tree_edges);
 					parent = null;
-					System.out.println("parent becomes numm at " + message_req_time);
+					System.out.println("parent becomes null at " + message_req_time);
 				} else {
 					parent = message.getSender();
 				}
-				// broadcast search message to other nodes on tree except who sent this message
-				// to this node
-				broadcast_on_tree(MsgType.SEARCH, null, message.getSender(), null);
-				// broadcast test on non tree edges
-				broadcast_on_nontree(MsgType.TEST, null, root);
+				// in this case, this node is the leaf node without any neighbors except parent, so we just pass
+				if (tree_edges.size() == 1 && outgoing_edges.size() == 0 && other_edges.size() == 0 && parent != null
+						&& id != root) {
+					Message ack = generate_message(parent, MsgType.TEST_REPLY, round, null, null);
+					private_message(ack);
+				} else {
+					// broadcast search message to other nodes on tree except who sent this message
+					// to this node
+					broadcast_on_tree(MsgType.SEARCH, null, message.getSender(), null);
+					// broadcast test on non tree edges
+					broadcast_on_nontree(MsgType.TEST, null, root);
+				}
 			} else if (message.getType().equals(MsgType.ADD_MWOE)) {
 				int[] edge = message.getEdge();
 				// leaf node which has the mwoe
@@ -315,10 +322,10 @@ public class Node {
 								}
 								sleep--;
 							}
-							
+
 							broadcast_on_tree(MsgType.NEW_LEADER, null, null, root);
 							parent = null;
-							System.out.println("parent becomes numm at " + message_req_time);
+							System.out.println("parent becomes null at " + message_req_time);
 						}
 					}
 				} else {
@@ -361,7 +368,7 @@ public class Node {
 					} else if (root == id) {
 						System.err.println(round + " now formally starts");
 						// ????? How to start next round
-						int sleep = 20;
+						int sleep = 15;
 						while (sleep > 0) {
 							try {
 								Thread.sleep(1000);
@@ -390,7 +397,7 @@ public class Node {
 						send_to_self(m);
 					}
 					parent = null;
-					System.out.println("parent becomes numm at " + message_req_time);
+					System.out.println("parent becomes null at " + message_req_time);
 				}
 			} else if (message.getType().equals(MsgType.TEST)) {
 				Integer comp_id = message.getRoot_id();
@@ -447,9 +454,9 @@ public class Node {
 				except_parent.addAll(tree_edges.keySet());
 				except_parent.remove(parent);
 				// nontree.remove(parent);
-
-				System.out.println("ing set " + algo.getTest_set());
-				System.out.println("real set " + except_parent);
+				System.out.println("parent: " + parent);
+				System.out.println("real set " + algo.getTest_set());
+				System.out.println("expected set " + except_parent);
 				// if receive all test_reply except parent
 				if (algo.getTest_set().equals(except_parent)) {
 					receive_all_test = true;
@@ -476,7 +483,7 @@ public class Node {
 						private_message(cur_mwoe);
 					}
 					parent = null;
-					System.out.println("parent becomes numm at " + message_req_time);
+					System.out.println("parent becomes null at " + message_req_time);
 					// this node sent test_reply to it's parent then we can process merge message
 					process_buffered_merge();
 					// reset mwoe and min for next round
@@ -528,7 +535,7 @@ public class Node {
 						int[] newleader = new int[3];
 						newleader[0] = root;
 						parent = null;
-						System.out.println("parent becomes numm at " + message_req_time);
+						System.out.println("parent becomes null at " + message_req_time);
 						broadcast_on_tree(MsgType.NEW_LEADER, newleader, null, root);
 					}
 				}
@@ -587,7 +594,7 @@ public class Node {
 	 */
 	public synchronized void private_message(Message message) {
 		message_req_time++;
-		System.err.println(id + "Send Message " + message + " at " + message_req_time);
+		System.err.println(id + " Send Message " + message + " at " + message_req_time);
 		ObjectOutputStream oos = outgoingMap.get(message.getReceiver());
 		try {
 			oos.writeObject(message);
@@ -602,6 +609,7 @@ public class Node {
 	 * @param message
 	 */
 	public synchronized void send_to_self(Message message) {
+		System.err.println(id + "Send Message " + message + " at " + message_req_time);
 		try {
 			self_sender.writeObject(message);
 		} catch (UnknownHostException e) {
@@ -625,11 +633,7 @@ public class Node {
 			System.err.println("Please input correct format as: nodeid");
 			System.exit(1);
 		}
-		/*
-		 * int start_time = 30; while (start_time > 0) { System.err.println("Left " +
-		 * start_time + " seconds to start other machine "); try { Thread.sleep(1000); }
-		 * catch (InterruptedException e) { e.printStackTrace(); } start_time--; }
-		 */
+
 		Node node = new Node(args[0]);
 		node.init();
 
