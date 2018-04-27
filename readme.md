@@ -71,7 +71,9 @@ Run the main of Node.java meanwhile passing node id as input to start the node w
 Notice: for this project, I simply delay each round for seconds to make it a sync network, a better way would be to use synchronizer in async network.
 ```
 ```
-This is a nasty project, it often goes into deadlock due to concurrency problems, please run multiple times to get the correct result.
+This is a nasty project, it often goes into deadlock due to concurrency problems so that some times
+
+it takes several times until you get the correct result.
 ```
 ```
 Feel free to email me about more details about this project
