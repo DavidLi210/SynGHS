@@ -1,4 +1,4 @@
-package cs6380.util;
+package cs6378.util;
 
 import java.util.Collections;
 import java.util.HashMap;
